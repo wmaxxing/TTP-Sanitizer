@@ -71,7 +71,34 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             
         if (isinstance(temp[0], datetime)):
             # HANDLES THE TIME        
-            timeHander(dataFile, temp, tempRowList, k, totalDataFrame)   
+            timeHander(dataFile, temp, tempRowList, k, totalDataFrame)  
+            # HANDLES THE STUDENTS
+            studentList = []
+            # CASE WHERE FIRST TILE IS FULL AND NAMES FOLLOW BELOW
+            if (not pd.isna(dataFile.iloc[k, 2])):
+                studentList.append(str(dataFile.iloc[k, 2]) + str(k + 1))
+                curr = k + 1
+                currCell = dataFile.iloc[curr, 0]
+                while (pd.isna(currCell)):
+                    if (not pd.isna(dataFile.iloc[curr, 1]) and (str(dataFile.iloc[curr, 1])[0] in tuple("0123456789"))):
+                        break
+                    if (not pd.isna(dataFile.iloc[curr, 2])):
+                        studentList.append(str(dataFile.iloc[curr, 2]) + str(curr + 1))
+                    curr+=1
+                    currCell = dataFile.iloc[curr, 0]
+            # CASE WHERE FIRST TILE IS EMPTY AND MUST BACKTRACK UP FOR ENTRIES
+            elif (pd.isna(dataFile.iloc[k, 2])): 
+                curr = k - 1
+                currCell = dataFile.iloc[curr, 0]
+                while (pd.isna(currCell)):
+                    curr-=1
+                    currCell = dataFile.iloc[curr, 0]
+                    if (not pd.isna(dataFile.iloc[curr, 2])):
+                        studentList.append(str(dataFile.iloc[curr, 2]) + str(curr + 1))
+                curr = k - 1
+                studentList.append(str(dataFile.iloc[curr, 2]) + str(curr + 1))
+            print(studentList)
+            
             # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
             rowDupe(totalDataFrame, tempRowList)
         
