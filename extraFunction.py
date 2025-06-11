@@ -36,7 +36,7 @@ def saveCleanExcel(df: pd.DataFrame, filename: str):
     
 # Used to pull the data block from the original file  
 def findBlocks(dataFile: pd.DataFrame):
-    lastRow = dataFile.dropna(how='all').index.max()
+    lastRow = dataFile.dropna(how='all').index.max() + 1
     dataNums = []
     #Loops through whole doc and finds check for boxes of content
     for i in range(lastRow):
@@ -70,20 +70,37 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             temp.append(dataFile.iloc[k,l])
             
         if (isinstance(temp[0], datetime)):
-
             # HANDLES THE TIME        
             timeHander(dataFile, temp, tempRowList, k, totalDataFrame)   
-            # END CODE TO ISOLATE LATER
-            if (tempRowList[1] == "Both"):
-                tempRowList[1] = "Morning"
-                totalDataFrame.append(tempRowList)
-                dupRowList = [tempRowList[0], "Afternoon", tempRowList[2], tempRowList[3], tempRowList[4]]
-                totalDataFrame.append(dupRowList)
-            else:
-                totalDataFrame.append(tempRowList)
+            # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
+            rowDupe(totalDataFrame, tempRowList)
+        
+        elif ((pd.isna(temp[0])) and (str(temp[1])[0] in tuple("0123456789"))):
+            # PULLS IN THE PREVIOUS DATE FROM THE NEAREST ABOVE LINE
+            curr = k - 1
+            currCell = dataFile.iloc[curr, 0]
+            while (pd.isna(currCell)):
+                curr-=1
+                currCell = dataFile.iloc[curr, 0]
+            tempRowList[0] = currCell
+            
+            timeHander(dataFile, temp, tempRowList, k, totalDataFrame)
+            rowDupe(totalDataFrame, tempRowList)
+
 
         # Must determine a way to pull in data when multiple time block span a single day
             
+# Used to duplicate rows when a "BOTH" type session is encountered
+def rowDupe(totalDataFrame: list, tempRowList: list):
+    # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
+    if (tempRowList[1] == "Both"):
+        tempRowList[1] = "Morning"
+        totalDataFrame.append(tempRowList)
+        dupRowList = [tempRowList[0], "Afternoon", tempRowList[2], tempRowList[3], tempRowList[4]]
+        totalDataFrame.append(dupRowList)
+    else:
+        totalDataFrame.append(tempRowList)
+    
 # Used to set up the document and orient basic requried info
 def excelSetUp(dataFile: pd.DataFrame, totalDataFrame: list, y1: int, y2: int):
     # (DOCTOR NAME, SPECIALTY, TTP TYPE, SPECIAL INFO)

@@ -3,12 +3,11 @@ import pandas as pd
 import extraFunction
 from datetime import datetime
 
-filePath = "./SHEETS/test sheet2.xlsx"
+filePath = "./testSheets/test sheet2.xlsx"
 dataFile = pd.read_excel(filePath, header=None)
 
 dataList = []
 columns = ["0", "1", "2", "3", "4"]
-lastRow = dataFile.dropna(how='all').index.max()
 
 dataNums = extraFunction.findBlocks(dataFile)
 
