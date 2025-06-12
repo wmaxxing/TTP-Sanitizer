@@ -71,34 +71,9 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             
         if (isinstance(temp[0], datetime)):
             # HANDLES THE TIME        
-            timeHander(dataFile, temp, tempRowList, k, totalDataFrame)  
+            timeHander(dataFile, temp, tempRowList, k)  
             # HANDLES THE STUDENTS
-            studentList = []
-            # CASE WHERE FIRST TILE IS FULL AND NAMES FOLLOW BELOW
-            if (not pd.isna(dataFile.iloc[k, 2])):
-                studentList.append(str(dataFile.iloc[k, 2]) + str(k + 1))
-                curr = k + 1
-                currCell = dataFile.iloc[curr, 0]
-                while (pd.isna(currCell)):
-                    if (not pd.isna(dataFile.iloc[curr, 1]) and (str(dataFile.iloc[curr, 1])[0] in tuple("0123456789"))):
-                        break
-                    if (not pd.isna(dataFile.iloc[curr, 2])):
-                        studentList.append(str(dataFile.iloc[curr, 2]) + str(curr + 1))
-                    curr+=1
-                    currCell = dataFile.iloc[curr, 0]
-            # CASE WHERE FIRST TILE IS EMPTY AND MUST BACKTRACK UP FOR ENTRIES
-            elif (pd.isna(dataFile.iloc[k, 2])): 
-                curr = k - 1
-                currCell = dataFile.iloc[curr, 0]
-                while (pd.isna(currCell)):
-                    curr-=1
-                    currCell = dataFile.iloc[curr, 0]
-                    if (not pd.isna(dataFile.iloc[curr, 2])):
-                        studentList.append(str(dataFile.iloc[curr, 2]) + str(curr + 1))
-                curr = k - 1
-                studentList.append(str(dataFile.iloc[curr, 2]) + str(curr + 1))
-            print(studentList)
-            
+            studentHander(dataFile, k, tempRowList)
             # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
             rowDupe(totalDataFrame, tempRowList)
         
@@ -111,14 +86,43 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
                 currCell = dataFile.iloc[curr, 0]
             tempRowList[0] = currCell
             
-            timeHander(dataFile, temp, tempRowList, k, totalDataFrame)
+            timeHander(dataFile, temp, tempRowList, k)
+            studentHander(dataFile, k, tempRowList)
             rowDupe(totalDataFrame, tempRowList)
 
-
-        # Must determine a way to pull in data when multiple time block span a single day
-            
+# Used to pull all of the data relating to students out of the spread sheets, returns a name list of students
+def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):            # HANDLES THE STUDENTS
+    studentList = []
+    # CASE WHERE FIRST TILE IS FULL AND NAMES FOLLOW BELOW
+    if (not pd.isna(dataFile.iloc[k, 2])):
+        studentList.append(str(dataFile.iloc[k, 2]))
+        curr = k + 1
+        currCell = dataFile.iloc[curr, 0]
+        while (pd.isna(currCell)):
+            if (not pd.isna(dataFile.iloc[curr, 1]) and (str(dataFile.iloc[curr, 1])[0] in tuple("0123456789"))):
+                break
+            if (not pd.isna(dataFile.iloc[curr, 2])):
+                studentList.append(str(dataFile.iloc[curr, 2]))
+            curr+=1
+            currCell = dataFile.iloc[curr, 0]
+    # CASE WHERE FIRST TILE IS EMPTY AND MUST BACKTRACK UP FOR ENTRIES
+    elif (pd.isna(dataFile.iloc[k, 2])): 
+        curr = k - 1
+        currCell = dataFile.iloc[curr, 0]
+        while (pd.isna(currCell)):
+            curr-=1
+            currCell = dataFile.iloc[curr, 0]
+            if (not pd.isna(dataFile.iloc[curr, 2])):
+                studentList.append(str(dataFile.iloc[curr, 2]))
+        curr = k - 1
+        studentList.append(str(dataFile.iloc[curr, 2]))
+    
+    tempRowList[2] = studentList
+    tempRowList[3] = len(studentList)
+                    
 # Used to duplicate rows when a "BOTH" type session is encountered
 def rowDupe(totalDataFrame: list, tempRowList: list):
+
     # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
     if (tempRowList[1] == "Both"):
         tempRowList[1] = "Morning"
@@ -181,7 +185,7 @@ def timeExtractor(timeOfSession: str):
     return [int(noOne), int(noTwo)]   
 
 # Used to extract times and pick day time for sessions
-def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, totalDataFrame: list):
+def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
     # FUNCTION THAT PULLS IN THE TIME OF THE CLASS
     # PULLS THE FIRST TIME OUT OF THE SHEET
     if (str(temp[1]).startswith(tuple("0123456789"))):
