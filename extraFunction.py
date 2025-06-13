@@ -70,6 +70,7 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             temp.append(dataFile.iloc[k,l])
             
         if (isinstance(temp[0], datetime)):
+            tempRowList[0] = pd.to_datetime(dataFile.iloc[k, 0]).strftime('%Y-%m-%d')
             # HANDLES THE TIME        
             timeHander(dataFile, temp, tempRowList, k)  
             # HANDLES THE STUDENTS
@@ -84,7 +85,7 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             while (pd.isna(currCell)):
                 curr-=1
                 currCell = dataFile.iloc[curr, 0]
-            tempRowList[0] = currCell
+            tempRowList[0] = pd.to_datetime(currCell).strftime('%Y-%m-%d')
             
             timeHander(dataFile, temp, tempRowList, k)
             studentHander(dataFile, k, tempRowList)
@@ -117,7 +118,10 @@ def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):           
         curr = k - 1
         studentList.append(str(dataFile.iloc[curr, 2]))
     
-    tempRowList[2] = studentList
+    studentNames = str(studentList[0])
+    for i in range(1, len(studentList)):
+        studentNames += " | " + studentList[i]
+    tempRowList[2] = studentNames
     tempRowList[3] = len(studentList)
                     
 # Used to duplicate rows when a "BOTH" type session is encountered
