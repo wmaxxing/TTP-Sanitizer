@@ -8,7 +8,7 @@ filePath = "./testSheets/test sheet2.xlsx"
 dataFile = pd.read_excel(filePath, header=None)
 
 dataList = []
-columns = ["Session Date", "Sesstion Time", "Student Names", "# Of Students", "Extra Info"]
+columns = ["Session Date", "Site", "Session Type", "Num Students", "S1", "S2", "S3", "S4"]
 
 dataNums = extraFunction.findBlocks(dataFile)
 
@@ -20,7 +20,7 @@ for i in range(len(dataNums)):
     # (DATA AGGREGATION FOR STUDENTS AND LESSON TIMES)
     y1+=2 #REORIENT OUR POINTER
     for k in range (y1, y2):
-        tempRowList = ["", "", "", "", ""]
+        tempRowList = ["", "", "", "", "", "", "", ""]
         temp = []
         extraFunction.handleRows(dataFile, temp, tempRowList, k, totalDataFrame)
             
@@ -39,10 +39,10 @@ st.title("Sanitized Data")
 if 'outputFile' not in st.session_state:
     # INDEX + COLUMNS
     outputFile = outputFile.reset_index(drop=True)
-    outputFile.columns = ["Session Date", "Site", "Session Type", "Num Students", "Compensation Type"]
+    outputFile.columns = ["Session Date", "Time", "Session Type", "# Students", "S1", "S2", "S3", "S4"]
 
     # FORCE TYPES FOR EDITING
-    outputFile["Num Students"] = outputFile["Num Students"].astype(str)
+    outputFile["# Students"] = outputFile["# Students"].astype(str)
 
     # STORE IN SESSION STATE
     st.session_state.outputFile = outputFile.copy()
@@ -103,10 +103,9 @@ if st.button("Save Final Version"):
     edited_df_no_row = edited_df.drop(columns=['Row'])
 
     # CONVERT Num Students BACK TO NUMBER
-    edited_df_no_row["Num Students"] = edited_df_no_row["Num Students"].apply(
-        lambda x: int(x) if str(x).strip().isdigit() else ""
+    edited_df_no_row["# Students"] = edited_df_no_row["# Students"].apply(
+        lambda x: int(x) if str(x).strip().isdigit() else x
     )
-
 
     # SAVE TO EXCEL
     extraFunction.saveCleanExcel(edited_df_no_row, "block_1.xlsx")

@@ -118,10 +118,9 @@ def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):           
         curr = k - 1
         studentList.append(str(dataFile.iloc[curr, 2]))
     
-    studentNames = str(studentList[0])
-    for i in range(1, len(studentList)):
-        studentNames += " | " + studentList[i]
-    tempRowList[2] = studentNames
+
+    for i in range(0, len(studentList)):
+       tempRowList[4 + i] = studentList[i]
     tempRowList[3] = len(studentList)
                     
 # Used to duplicate rows when a "BOTH" type session is encountered
@@ -131,7 +130,7 @@ def rowDupe(totalDataFrame: list, tempRowList: list):
     if (tempRowList[1] == "Both"):
         tempRowList[1] = "Morning"
         totalDataFrame.append(tempRowList)
-        dupRowList = [tempRowList[0], "Afternoon", tempRowList[2], tempRowList[3], tempRowList[4]]
+        dupRowList = [tempRowList[0], "Afternoon", tempRowList[2], tempRowList[3], tempRowList[4], tempRowList[5] , tempRowList[6], tempRowList[7]]
         totalDataFrame.append(dupRowList)
     else:
         totalDataFrame.append(tempRowList)
@@ -139,16 +138,16 @@ def rowDupe(totalDataFrame: list, tempRowList: list):
 # Used to set up the document and orient basic requried info
 def excelSetUp(dataFile: pd.DataFrame, totalDataFrame: list, y1: int, y2: int):
     # (DOCTOR NAME, SPECIALTY, TTP TYPE, SPECIAL INFO)
-    topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], dataFile.iloc[y2,1], dataFile.iloc[y2,2], ""]
+    topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], dataFile.iloc[y2,1], dataFile.iloc[y2,2], "", "", "", ""]
     totalDataFrame.append(topRowList)
     # (DATE, TIME, STUDENT NAMES, NUMBER OF STUDENTS)
-    secondRowList = ["DATE", "TIME", "STUDENT NAMES", "# OF STUDENTS", "EXTRA INFO"]
+    secondRowList = ["DATE", "TIME", "EXTRA INFO", "# OF STUDENTS", "S1", "S2", "S3", "S4"]
     totalDataFrame.append(secondRowList)
     
 # Creats an empty row in excel   
 def excelEmptyRow(dataList: pd.DataFrame, columns: list):
     # EMPTY ROW FOR EASE OF READ
-    dataList.append(pd.DataFrame([["", "", "", "", ""]], columns=columns))
+    dataList.append(pd.DataFrame([["", "", "", "", "", "", "", ""]], columns=columns))
     
 # Used to accumulate the data from a cycle of a block
 def dataAccum(dataList: pd.DataFrame, totalDataFrame: list, columns:list):
@@ -199,7 +198,7 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
         curr = dataFile.iloc[currNum,1]
         while ((not str(curr) in paymentLUT) and (not str(curr).startswith(tuple("0123456789")))):
             if ((not str(curr).startswith(tuple("0123456789"))) and (not pd.isna(curr))):
-                tempRowList[4] += " " + str(curr)
+                tempRowList[2] += " " + str(curr)
             currNum += 1
             curr = dataFile.iloc[currNum, 1]
     # DEALS WITH EMPTY ROWS PULLING THE TIME BACK IN
@@ -214,5 +213,5 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
     else:
         if (str(temp[1] == "STAT")):
             return
-        tempRowList[4] += str(temp[1]) 
+        tempRowList[2] += str(temp[1]) 
     
