@@ -34,6 +34,8 @@ def saveCleanExcel(df: pd.DataFrame, filename: str):
     wb.save(filename)
     print(f"Saved to: {filename}")
     
+# ==== DATA EXTRACTION FUNCTIONS ====
+
 # Used to pull the data block from the original file  
 def findBlocks(dataFile: pd.DataFrame):
     lastRow = dataFile.dropna(how='all').index.max() + 1
@@ -214,4 +216,34 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
         if (str(temp[1] == "STAT")):
             return
         tempRowList[2] += str(temp[1]) 
-    
+
+def fileExtractor(filePath: str):
+    try:
+        dataFile = pd.read_excel(filePath, header=None)
+
+        dataList = []
+        columns = ["Session Date", "Site", "Session Type", "Num Students", "S1", "S2", "S3", "S4"]
+
+        dataNums = findBlocks(dataFile)
+
+        for i in range(len(dataNums)):
+            totalDataFrame = [] 
+            y1 = dataNums[i][0]
+            y2 = dataNums[i][1]
+            excelSetUp(dataFile, totalDataFrame, y1, y2)
+            # (DATA AGGREGATION FOR STUDENTS AND LESSON TIMES)
+            y1+=2 #REORIENT OUR POINTER
+            for k in range (y1, y2):
+                tempRowList = ["", "", "", "", "", "", "", ""]
+                temp = []
+                handleRows(dataFile, temp, tempRowList, k, totalDataFrame)
+                    
+            dataAccum(dataList, totalDataFrame, columns)
+            excelEmptyRow(dataList, columns)
+            
+        outputFile = pd.concat(dataList, ignore_index=True)
+        return outputFile
+    except Exception as e:
+        print(f"[fileExtractor] Error processing file: {e}")
+        raise  # ← this is the correct way to re-raise the original error
+# ==== DATA END FORMATTING FUNCTIONS ==== 
