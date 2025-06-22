@@ -31,7 +31,7 @@ if st.session_state.screen == "collectData":
     endDate = st.date_input("End Date", value=st.session_state.get("endDate", datetime.date.today()))
 
     # === CONTINUE ON BUTTON PRESS ===
-    if st.button("Continue"):
+    if st.button("Continue", key="continue"):
         if not filePath or not rotation:
             st.warning("Please fill out all required fields.")
         else:
@@ -121,57 +121,70 @@ if st.session_state.screen == "edit":
     )
 
     # === BUTTONS SIDE BY SIDE ===
-    col1, col2, _ = st.columns([0.15, 0.15, 1.75])
-
-    # === UNIVERSAL CLEANING FUNCTION ===
-    def cleanEditedData(df):
-        # DROP ROW COLUMN IF EXISTS
-        if "Row" in df.columns:
-            df = df.drop(columns=['Row'])
-
-        # SAFE CONVERT "# Students"
-        if "# Students" in df.columns:
-            df["# Students"] = df["# Students"].apply(
-                lambda x: int(x) if str(x).strip().isdigit() else x
-            )
-
-        return df
+    col1, col2, col3, col4, _ = st.columns([0.13, 0.18, 0.15, 0.15, 1.75])
 
     with col1:
-        # === CONTINUE ON BUTTON PRESS ===
-        if st.button("Continue", key="edit_continue"):
-            editedDataFile = cleanEditedData(editedDataFile)
+        # === TTPS ON BUTTON PRESS ===
+        if st.button("TTPS", key="editTTP"):
+            editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
             st.session_state.cleanedData = editedDataFile.copy()
-            st.session_state.screen = "processed"
+            st.session_state.screen = "ttps"
             st.rerun()
-
+    
     with col2:
+    # === TRACKER ON BUTTON PRESS ===
+        if st.button("TRACKER", key="editTracker"):
+            editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
+            st.session_state.cleanedData = editedDataFile.copy()
+            st.session_state.screen = "tracker"
+            st.rerun()
+            
+    with col3:
+        # === CONTINUE ON BUTTON PRESS ===
+        if st.button("ONE45", key="editOne45"):
+            editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
+            st.session_state.cleanedData = editedDataFile.copy()
+            st.session_state.screen = "one45"
+            st.rerun()
+    
+    with col4:
         # === RETURN TO DATA ENTRY === 
-        if st.button("Return", key="edit_return"):
-            editedDataFile = cleanEditedData(editedDataFile)
+        if st.button("Return", key="editReturn"):
+            editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
             st.session_state.cleanedData = editedDataFile.copy()
             st.session_state.screen = "collectData"
             st.rerun()
 
 
         
-# === SCREEN: CLEANED OUTPUT ===
-# elif st.session_state.screen == "processed":
-#     st.title("Processed Data")
-
-#     st.dataframe(st.session_state.cleanedData)
-
-#     # EXPORT BUTTON
-#     if st.button("Export to Excel"):
-#         extraFunction.saveCleanExcel(st.session_state.cleanedData, "block_1.xlsx")
-#         st.success("Final version exported as block_1.xlsx")
-#         st.rerun()
-
-#     # BACK BUTTON
-#     if st.button("Back to Editor"):
-#         st.session_state.screen = "edit"
-#         st.rerun()
+    # === SCREEN: TTPS OUTPUT ===
+if st.session_state.screen == "ttps":
+    st.title("TTPS Data")
         
+    # === RETURN TO DATA EDITING === 
+    if st.button("Return", key="editReturnTTPS"):
+        st.session_state.screen = "edit"
+        st.rerun()
+        
+# === SCREEN: INTERNAL TRACKER OUTPUT ===
+if st.session_state.screen == "tracker":
+    st.title("Internal Tracker Data")
+        
+    # === RETURN TO DATA EDITING === 
+    if st.button("Return", key="editReturnTracker"):
+        st.session_state.screen = "edit"
+        st.rerun()
+
+
+# === SCREEN: ONE45 OUTPUT ===
+if st.session_state.screen == "one45":
+    st.title("One45 Data")
+        
+    # === RETURN TO DATA EDITING === 
+    if st.button("Return", key="editReturnOne45"):
+        st.session_state.screen = "edit"
+        st.rerun()
+
 
 
 

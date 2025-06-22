@@ -245,5 +245,19 @@ def fileExtractor(filePath: str):
         return outputFile
     except Exception as e:
         print(f"[fileExtractor] Error processing file: {e}")
-        raise  # ← this is the correct way to re-raise the original error
+        raise 
 # ==== DATA END FORMATTING FUNCTIONS ==== 
+
+# UNIVERSAL CLEANING FUNCTION
+def cleanEditedData(df):
+    # DROP ROW COLUMN IF EXISTS
+    if "Row" in df.columns:
+        df = df.drop(columns=['Row'])
+
+    # SAFE CONVERT "# Students"
+    if "# Students" in df.columns:
+        df["# Students"] = df["# Students"].apply(
+            lambda x: int(x) if str(x).strip().isdigit() else x
+        )
+
+    return df
