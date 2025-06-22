@@ -64,9 +64,6 @@ if st.session_state.screen == "edit":
         outputFile = outputFile.reset_index(drop=True)
         outputFile.columns = ["Session Date", "Time", "Session Type", "# Students", "S1", "S2", "S3", "S4"]
 
-        # FORCE TYPES FOR EDITING
-        outputFile["# Students"] = outputFile["# Students"].astype(str)
-
         # STORE IN SESSION STATE
         st.session_state.outputFile = outputFile.copy()
 
@@ -109,6 +106,10 @@ if st.session_state.screen == "edit":
     # MAKE A COPY OF DATAFRAME FOR DISPLAY
     outputFile_display = st.session_state.outputFile.copy()
 
+    # FORCE "# Students" to string for editability
+    if "# Students" in outputFile_display.columns:
+        outputFile_display["# Students"] = outputFile_display["# Students"].astype(str)
+        
     # ADD ROW COLUMN (1-BASED)
     outputFile_display.insert(0, 'Row', outputFile_display.index + 1)
 
@@ -127,7 +128,8 @@ if st.session_state.screen == "edit":
         # === TTPS ON BUTTON PRESS ===
         if st.button("TTPS", key="editTTP"):
             editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
-            st.session_state.cleanedData = editedDataFile.copy()
+            processedData = extractionFunctions.dataTTPS(editedDataFile)
+            st.session_state.ttpsData = processedData.copy()
             st.session_state.screen = "ttps"
             st.rerun()
     
@@ -135,7 +137,8 @@ if st.session_state.screen == "edit":
     # === TRACKER ON BUTTON PRESS ===
         if st.button("TRACKER", key="editTracker"):
             editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
-            st.session_state.cleanedData = editedDataFile.copy()
+            processedData = extractionFunctions.dataTracker(editedDataFile)
+            st.session_state.trackerData = processedData.copy()
             st.session_state.screen = "tracker"
             st.rerun()
             
@@ -143,7 +146,8 @@ if st.session_state.screen == "edit":
         # === CONTINUE ON BUTTON PRESS ===
         if st.button("ONE45", key="editOne45"):
             editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
-            st.session_state.cleanedData = editedDataFile.copy()
+            processedData = extractionFunctions.dataOne45(editedDataFile)
+            st.session_state.one45Data = processedData.copy()
             st.session_state.screen = "one45"
             st.rerun()
     
@@ -160,6 +164,7 @@ if st.session_state.screen == "edit":
     # === SCREEN: TTPS OUTPUT ===
 if st.session_state.screen == "ttps":
     st.title("TTPS Data")
+    st.dataframe(st.session_state.ttpsData)
         
     # === RETURN TO DATA EDITING === 
     if st.button("Return", key="editReturnTTPS"):
@@ -169,7 +174,8 @@ if st.session_state.screen == "ttps":
 # === SCREEN: INTERNAL TRACKER OUTPUT ===
 if st.session_state.screen == "tracker":
     st.title("Internal Tracker Data")
-        
+    st.dataframe(st.session_state.trackerData)
+    
     # === RETURN TO DATA EDITING === 
     if st.button("Return", key="editReturnTracker"):
         st.session_state.screen = "edit"
@@ -179,6 +185,7 @@ if st.session_state.screen == "tracker":
 # === SCREEN: ONE45 OUTPUT ===
 if st.session_state.screen == "one45":
     st.title("One45 Data")
+    st.dataframe(st.session_state.one45Data)
         
     # === RETURN TO DATA EDITING === 
     if st.button("Return", key="editReturnOne45"):

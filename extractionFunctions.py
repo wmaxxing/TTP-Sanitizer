@@ -222,7 +222,7 @@ def fileExtractor(filePath: str):
         dataFile = pd.read_excel(filePath, header=None)
 
         dataList = []
-        columns = ["Session Date", "Site", "Session Type", "Num Students", "S1", "S2", "S3", "S4"]
+        columns = ["Session Date", "Site", "Session Type", "# Students", "S1", "S2", "S3", "S4"]
 
         dataNums = findBlocks(dataFile)
 
@@ -261,3 +261,15 @@ def cleanEditedData(df):
         )
 
     return df
+
+# Organizes the data in the format needed for TTPS
+def dataTTPS(dataFile: pd.DataFrame):
+    return dataFile
+    
+# Organizes the data in the format needed for the Internal Tracker
+def dataTracker(dataFile: pd.DataFrame):
+    return dataFile
+    
+# Organizes the data in the format needed for One45
+def dataOne45(dataFile: pd.DataFrame):
+    return dataFile
