@@ -94,5 +94,5 @@ Potential features under consideration:
 
 ## Contact
 
-For questions or suggestions, contact the project maintainer.
+For questions or suggestions, contact the wmaxxing on github.
 
