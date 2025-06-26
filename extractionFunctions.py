@@ -40,7 +40,7 @@ def saveCleanExcel(df: pd.DataFrame, filename: str):
 def findBlocks(dataFile: pd.DataFrame):
     lastRow = dataFile.dropna(how='all').index.max() + 1
     dataNums = []
-    #Loops through whole doc and finds check for boxes of content
+    # Loops through whole doc and finds check for boxes of content
     for i in range(lastRow):
         testForDate = str(dataFile.iloc[i, start])
         # If the keyword date is found begins the box searching process
@@ -67,21 +67,21 @@ def findBlocks(dataFile: pd.DataFrame):
 
 # Used to handle all the pulling of data from the time columns of the original document
 def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, totalDataFrame: list):
-            # SETS UP THE TEMP ROW OF DATA FROM THE SPREAD SHEET
+            # Sets up the temp row of data from the spread sheet
         for l in range(3):
             temp.append(dataFile.iloc[k,l])
             
         if (isinstance(temp[0], datetime)):
             tempRowList[0] = pd.to_datetime(dataFile.iloc[k, 0]).strftime('%Y-%m-%d')
-            # HANDLES THE TIME        
+            # Handles the time      
             timeHander(dataFile, temp, tempRowList, k)  
-            # HANDLES THE STUDENTS
+            # Handles the students
             studentHander(dataFile, k, tempRowList)
-            # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
+            # Duplicates rows depending on morning and afternoon coverage
             rowDupe(totalDataFrame, tempRowList)
         
         elif ((pd.isna(temp[0])) and (str(temp[1])[0] in tuple("0123456789"))):
-            # PULLS IN THE PREVIOUS DATE FROM THE NEAREST ABOVE LINE
+            # Pulls in the previous date from the nearest above line
             curr = k - 1
             currCell = dataFile.iloc[curr, 0]
             while (pd.isna(currCell)):
@@ -94,9 +94,9 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             rowDupe(totalDataFrame, tempRowList)
 
 # Used to pull all of the data relating to students out of the spread sheets, returns a name list of students
-def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):            # HANDLES THE STUDENTS
+def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):
     studentList = []
-    # CASE WHERE FIRST TILE IS FULL AND NAMES FOLLOW BELOW
+    # Case where first tile is full and names follow below
     if (not pd.isna(dataFile.iloc[k, 2])):
         studentList.append(str(dataFile.iloc[k, 2]))
         curr = k + 1
@@ -108,7 +108,7 @@ def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):           
                 studentList.append(str(dataFile.iloc[curr, 2]))
             curr+=1
             currCell = dataFile.iloc[curr, 0]
-    # CASE WHERE FIRST TILE IS EMPTY AND MUST BACKTRACK UP FOR ENTRIES
+    # Case where first tile is empty and must backtrack up for entries
     elif (pd.isna(dataFile.iloc[k, 2])): 
         curr = k - 1
         currCell = dataFile.iloc[curr, 0]
@@ -128,7 +128,7 @@ def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):           
 # Used to duplicate rows when a "BOTH" type session is encountered
 def rowDupe(totalDataFrame: list, tempRowList: list):
 
-    # DUPLICATES ROWS DEPENDING ON MORNING AND AFTERNOON COVERAGE
+    # Duplicates rows depending on morning and afternoon coverage
     if (tempRowList[1] == "Both"):
         tempRowList[1] = "Morning"
         totalDataFrame.append(tempRowList)
@@ -148,7 +148,7 @@ def excelSetUp(dataFile: pd.DataFrame, totalDataFrame: list, y1: int, y2: int):
     
 # Creats an empty row in excel   
 def excelEmptyRow(dataList: pd.DataFrame, columns: list):
-    # EMPTY ROW FOR EASE OF READ
+    # Empty row for ease of reading
     dataList.append(pd.DataFrame([["", "", "", "", "", "", "", ""]], columns=columns))
     
 # Used to accumulate the data from a cycle of a block
@@ -191,11 +191,10 @@ def timeExtractor(timeOfSession: str):
 
 # Used to extract times and pick day time for sessions
 def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
-    # FUNCTION THAT PULLS IN THE TIME OF THE CLASS
-    # PULLS THE FIRST TIME OUT OF THE SHEET
+    # Pulls the first time out of the sheet
     if (str(temp[1]).startswith(tuple("0123456789"))):
         tempRowList[1] = timeOfSession(temp[1])
-        # HANDLES BELOW ROW COMMENTS
+        # Handles below row comments
         currNum = k + 1
         curr = dataFile.iloc[currNum,1]
         while ((not str(curr) in paymentLUT) and (not str(curr).startswith(tuple("0123456789")))):
@@ -203,7 +202,7 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
                 tempRowList[2] += " " + str(curr)
             currNum += 1
             curr = dataFile.iloc[currNum, 1]
-    # DEALS WITH EMPTY ROWS PULLING THE TIME BACK IN
+    # Deals with empty rows pulling the time back in
     elif (pd.isna(temp[1])):
         curr = k - 1
         currCell = dataFile.iloc[curr, 1]
@@ -211,12 +210,13 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
             curr-=1
             currCell = dataFile.iloc[curr, 1]
         tempRowList[1] = timeOfSession(str(currCell))
-    # DEALS WITH SPECIAL CASE INPUTS IN TIME COLUMN 
+    # Deals with special case inputs in the time column
     else:
         if (str(temp[1] == "STAT")):
             return
         tempRowList[2] += str(temp[1]) 
 
+# Main function that runs the file extraction program
 def fileExtractor(filePath: str):
     try:
         dataFile = pd.read_excel(filePath, header=None)
@@ -246,11 +246,12 @@ def fileExtractor(filePath: str):
     except Exception as e:
         print(f"[fileExtractor] Error processing file: {e}")
         raise 
-# ==== DATA END FORMATTING FUNCTIONS ==== 
+    
+# ==== END DATA FORMATTING FUNCTIONS ==== 
 
 # UNIVERSAL CLEANING FUNCTION
 def cleanEditedData(df):
-    # DROP ROW COLUMN IF EXISTS
+    # Drop row column if exists
     if "Row" in df.columns:
         df = df.drop(columns=['Row'])
 
