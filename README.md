@@ -81,7 +81,7 @@ Viewers and contributors should understand:
 
 ---
 
-## Future Improvements (Optional)
+## Future Improvements
 
 Potential features under consideration:
 
