@@ -164,7 +164,16 @@ if st.session_state.screen == "edit":
 # Screen: TTPS output
 if st.session_state.screen == "ttps":
     st.title("TTPS Data")
-    st.dataframe(st.session_state.ttpsData)
+    
+    # Cast problematic column to string before display
+    ttpsDisplay = st.session_state.ttpsData.copy()
+    if "# Students" in ttpsDisplay.columns:
+        ttpsDisplay["# Students"] = ttpsDisplay["# Students"].astype(str)
+        
+    st.dataframe(ttpsDisplay,         
+        use_container_width=True,
+        height=800,
+        hide_index=False)
         
     # Return to Editing on button press
     if st.button("Return", key="editReturnTTPS"):
@@ -174,7 +183,16 @@ if st.session_state.screen == "ttps":
 # Screen: Internal Tracker output
 if st.session_state.screen == "tracker":
     st.title("Internal Tracker Data")
-    st.dataframe(st.session_state.trackerData)
+    
+    # Cast problematic column to string before display
+    trackerDisplay = st.session_state.trackerData.copy()
+    if "# Students" in trackerDisplay.columns:
+        trackerDisplay["# Students"] = trackerDisplay["# Students"].astype(str)
+        
+    st.dataframe(trackerDisplay,
+        use_container_width=True,
+        height=800,
+        hide_index=False)
     
     # Return to Editing on button press
     if st.button("Return", key="editReturnTracker"):
@@ -185,7 +203,15 @@ if st.session_state.screen == "tracker":
 # Screen: One45 output
 if st.session_state.screen == "one45":
     st.title("One45 Data")
-    st.dataframe(st.session_state.one45Data)
+    
+    # Cast problematic column to string before display
+    one45Display = st.session_state.one45Data.copy()
+    if "# Students" in one45Display.columns:
+        one45Display["# Students"] = one45Display["# Students"].astype(str)
+    st.dataframe(one45Display,
+        use_container_width=True,
+        height=800,
+        hide_index=False)
         
     # Return to Editing on button press
     if st.button("Return", key="editReturnOne45"):

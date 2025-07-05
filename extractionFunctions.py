@@ -1,4 +1,5 @@
 import pandas as pd
+import string
 from openpyxl import load_workbook
 from openpyxl.styles import numbers
 from datetime import datetime
@@ -147,9 +148,20 @@ def excelSetUp(dataFile: pd.DataFrame, totalDataFrame: list, y1: int, y2: int):
     totalDataFrame.append(secondRowList)
     
 # Creats an empty row in excel   
-def excelEmptyRow(dataList: pd.DataFrame, columns: list):
+def emptyRow(dataList: pd.DataFrame, columns: list):
     # Empty row for ease of reading
-    dataList.append(pd.DataFrame([["", "", "", "", "", "", "", ""]], columns=columns))
+    testList = []
+    for i in range(len(columns)):
+        testList.append("")
+    dataList.append(pd.DataFrame([testList], columns=columns))
+    
+# Creats a barrier row in excel   
+def barrierRow(dataList: pd.DataFrame, columns: list):
+    # Empty row for ease of reading
+    testList = []
+    for i in range(len(columns)):
+        testList.append("======")
+    dataList.append(pd.DataFrame([testList], columns=columns))
     
 # Used to accumulate the data from a cycle of a block
 def dataAccum(dataList: pd.DataFrame, totalDataFrame: list, columns:list):
@@ -239,7 +251,7 @@ def fileExtractor(filePath: str):
                 handleRows(dataFile, temp, tempRowList, k, totalDataFrame)
                     
             dataAccum(dataList, totalDataFrame, columns)
-            excelEmptyRow(dataList, columns)
+            emptyRow(dataList, columns)
             
         outputFile = pd.concat(dataList, ignore_index=True)
         return outputFile
@@ -273,4 +285,78 @@ def dataTracker(dataFile: pd.DataFrame):
     
 # Organizes the data in the format needed for One45
 def dataOne45(dataFile: pd.DataFrame):
-    return dataFile
+    # List of preceptors and the there respective students
+    preceptorsToStudents = []
+    # List of all students in the current schedule
+    loStudents = []
+    # List of students and there respective preceptors
+    studentsToPreceptors = []
+    s1Col = 4
+    s4Col = 8
+    offset = 2
+    lastRow = dataFile.dropna(how='all').index.max() + 1
+    
+    # Pulls from the processed data and orgainzes the preceptorsToStudents List
+    for i in range(lastRow):
+        testCell = dataFile.iloc[i, 0]
+        if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
+            tempData = [str(testCell), []]
+            index = i + offset
+            while index < lastRow:
+                if (str(dataFile.iloc[index, 0]) == ""):
+                    break
+                for k in range (s1Col, s4Col):
+                    tempName = str(dataFile.iloc[index, k])
+                    if (not tempName in tempData[1] and not tempName == ""):
+                        (tempData[1]).append(tempName)
+                index += 1
+            preceptorsToStudents.append(tempData)
+            
+    # Accumulates the loStudents
+    for l in range(len(preceptorsToStudents)):
+        for z in range(len(preceptorsToStudents[l][1])):
+            if (not preceptorsToStudents[l][1][z] in loStudents):
+                loStudents.append(preceptorsToStudents[l][1][z])
+                
+    # Sets ups the studentsToPreceptors list
+    for t in range(len(loStudents)):
+        tempList = [loStudents[t], []]
+        studentsToPreceptors.append(tempList)
+        
+    # Pulls from the processed data and organized the studentsToPreceptors list 
+    for i in range(lastRow):
+        testCell = dataFile.iloc[i, 0]
+        if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
+            # Name of the preceptor
+            currName = str(testCell)
+            index = i + offset
+            while index < lastRow:
+                if (str(dataFile.iloc[index, 0]) == ""):
+                    break
+                for k in range (s1Col, s4Col):
+                    # Name of the student for processing
+                    tempName = str(dataFile.iloc[index, k])
+                    for z in range(len(studentsToPreceptors)):
+                        if (studentsToPreceptors[z][0] == tempName):
+                            studentsToPreceptors[z][1].append(currName)
+                index += 1
+    
+    # Displays the relevant info onto the screen when the One45 button is pressed
+    columns = ["C1", "C2", "C3", "C4", "C5", "C6"]
+    dataCollection = []
+    # Processing Preceptors -> Students
+    dataCollection.append(pd.DataFrame([["Preceptors", "---->", "Students", "======", "======", "======"]], columns=columns))
+    for i in range(len(preceptorsToStudents)):
+        tempList = []
+        tempList.append(preceptorsToStudents[i][0])
+        tempList.append("---->")
+        preceptorsToStudents[i][1] = sorted(preceptorsToStudents[i][1])
+        for k in range(len(preceptorsToStudents[i][1])):
+            tempList.append(preceptorsToStudents[i][1][k])
+        if (len(tempList) < 6):
+            for t in range(6 - len(tempList)):
+                tempList.append("")
+        dataCollection.append(pd.DataFrame([tempList], columns=columns))
+    barrierRow(dataCollection, columns)
+    
+    return pd.concat(dataCollection)
