@@ -3,12 +3,6 @@ import extractionFunctions
 import streamlit as st
 from datetime import datetime
 
-filePath = ""
-outputFile = ""
-rotation = ""
-startDate = ""
-endDate = ""
-
 # === STREAMLIT INTERFACE ===
 
 # Setup
@@ -26,9 +20,11 @@ if st.session_state.screen == "collectData":
 
     # Load previous values if available
     filePath = st.text_input("File Path", value=st.session_state.get("filePath", ""), placeholder="C:/path/to/file.xlsx")
-    rotation = st.text_input("Rotation Name", value=st.session_state.get("rotation", ""), placeholder="A1")
+    rotation = st.text_input("Rotation Name", value=st.session_state.get("rotation", ""), placeholder="A1, etc.")
+    location = st.text_input("Location Name", value=st.session_state.get("location", ""), placeholder="VGH, etc.")
     startDate = st.date_input("Start Date", value=st.session_state.get("startDate", datetime.date.today()))
     endDate = st.date_input("End Date", value=st.session_state.get("endDate", datetime.date.today()))
+    academicYear = st.text_input("Academic Year", value=st.session_state.get("academicYear", ""), placeholder="2025-2026, etc.")
 
     # Continue to Editing on button press
     if st.button("Continue", key="continue"):
@@ -42,8 +38,10 @@ if st.session_state.screen == "collectData":
                 # Save form data for future reuse
                 st.session_state.filePath = filePath
                 st.session_state.rotation = rotation
+                st.session_state.location = location
                 st.session_state.startDate = startDate
                 st.session_state.endDate = endDate
+                st.session_state.academicYear = academicYear
 
                 st.session_state.screen = "edit"
                 st.rerun()
@@ -121,7 +119,11 @@ if st.session_state.screen == "edit":
             st.session_state.outputFile = editedDataFile.copy()
     
             editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
-            processedData = extractionFunctions.dataTTPS(editedDataFile)
+            processedData = extractionFunctions.dataTTPS(editedDataFile, 
+                                                         st.session_state.get("startDate", ""), 
+                                                         st.session_state.get("endDate", ""), 
+                                                         st.session_state.get("location", ""), 
+                                                         st.session_state.get("rotation", ""))
             st.session_state.ttpsData = processedData.copy()
             st.session_state.screen = "ttps"
             st.rerun()
@@ -134,7 +136,10 @@ if st.session_state.screen == "edit":
             st.session_state.outputFile = editedDataFile.copy()
             
             editedDataFile = extractionFunctions.cleanEditedData(editedDataFile)
-            processedData = extractionFunctions.dataTracker(editedDataFile)
+            processedData = extractionFunctions.dataTracker(editedDataFile, 
+                                                            st.session_state.get("academicYear", ""), 
+                                                            st.session_state.get("rotation", ""), 
+                                                            st.session_state.get("location", ""))
             st.session_state.trackerData = processedData.copy()
             st.session_state.screen = "tracker"
             st.rerun()
@@ -164,16 +169,21 @@ if st.session_state.screen == "edit":
 # Screen: TTPS output
 if st.session_state.screen == "ttps":
     st.title("TTPS Data")
+    st.subheader("All entries marked as \"* Cannot Input into TTP *\" are not shown")
     
     # Cast problematic column to string before display
     ttpsDisplay = st.session_state.ttpsData.copy()
     if "# Students" in ttpsDisplay.columns:
         ttpsDisplay["# Students"] = ttpsDisplay["# Students"].astype(str)
         
-    st.dataframe(ttpsDisplay,         
+    st.data_editor(ttpsDisplay,         
         use_container_width=True,
         height=800,
-        hide_index=False)
+        hide_index=False,
+        num_rows="dynamic",
+        disabled=False,
+        column_config={col: {"disabled": True} for col in ttpsDisplay.columns}
+        )
         
     # Return to Editing on button press
     if st.button("Return", key="editReturnTTPS"):
@@ -189,10 +199,14 @@ if st.session_state.screen == "tracker":
     if "# Students" in trackerDisplay.columns:
         trackerDisplay["# Students"] = trackerDisplay["# Students"].astype(str)
         
-    st.dataframe(trackerDisplay,
+    st.data_editor(trackerDisplay,
         use_container_width=True,
         height=800,
-        hide_index=False)
+        hide_index=False,
+        num_rows="dynamic",
+        disabled=False,
+        column_config={col: {"disabled": True} for col in trackerDisplay.columns}
+        )
     
     # Return to Editing on button press
     if st.button("Return", key="editReturnTracker"):
@@ -208,10 +222,14 @@ if st.session_state.screen == "one45":
     one45Display = st.session_state.one45Data.copy()
     if "# Students" in one45Display.columns:
         one45Display["# Students"] = one45Display["# Students"].astype(str)
-    st.dataframe(one45Display,
+    st.data_editor(one45Display,
         use_container_width=True,
         height=800,
-        hide_index=False)
+        hide_index=False,
+        num_rows="dynamic",
+        disabled=False,
+        column_config={col: {"disabled": True} for col in one45Display.columns}
+        )
         
     # Return to Editing on button press
     if st.button("Return", key="editReturnOne45"):

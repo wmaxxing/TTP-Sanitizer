@@ -7,6 +7,9 @@ from datetime import datetime
 buffer = 1
 capture = 4
 start = 0 
+s1Col = 4
+s4Col = 8
+offset = 2
 
 paymentLUT = ["FFS", "GFT", "PS", "CSC", "SESSIONAL", "CHES FELLOW", "AIP", "CF", "PS", "SHA", "START TIME", "TSF"]
 
@@ -141,8 +144,12 @@ def rowDupe(totalDataFrame: list, tempRowList: list):
 # Used to set up the document and orient basic requried info
 def excelSetUp(dataFile: pd.DataFrame, totalDataFrame: list, y1: int, y2: int):
     # (DOCTOR NAME, SPECIALTY, TTP TYPE, SPECIAL INFO)
-    topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], dataFile.iloc[y2,1], dataFile.iloc[y2,2], "", "", "", ""]
-    totalDataFrame.append(topRowList)
+    if (str(dataFile.iloc[y1, 0]) == "PRECEPTOR TO BE DECIDED"):
+        topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], "*TBD*", dataFile.iloc[y2,2], "", "", "", ""]
+        totalDataFrame.append(topRowList)
+    else:
+        topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], dataFile.iloc[y2,1], dataFile.iloc[y2,2], "", "", "", ""]
+        totalDataFrame.append(topRowList)
     # (DATE, TIME, STUDENT NAMES, NUMBER OF STUDENTS)
     secondRowList = ["DATE", "TIME", "EXTRA INFO", "# OF STUDENTS", "S1", "S2", "S3", "S4"]
     totalDataFrame.append(secondRowList)
@@ -153,14 +160,6 @@ def emptyRow(dataList: pd.DataFrame, columns: list):
     testList = []
     for i in range(len(columns)):
         testList.append("")
-    dataList.append(pd.DataFrame([testList], columns=columns))
-    
-# Creats a barrier row in excel   
-def barrierRow(dataList: pd.DataFrame, columns: list):
-    # Empty row for ease of reading
-    testList = []
-    for i in range(len(columns)):
-        testList.append("======")
     dataList.append(pd.DataFrame([testList], columns=columns))
     
 # Used to accumulate the data from a cycle of a block
@@ -211,7 +210,7 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
         curr = dataFile.iloc[currNum,1]
         while ((not str(curr) in paymentLUT) and (not str(curr).startswith(tuple("0123456789")))):
             if ((not str(curr).startswith(tuple("0123456789"))) and (not pd.isna(curr))):
-                tempRowList[2] += " " + str(curr)
+                tempRowList[2] += str(curr)
             currNum += 1
             curr = dataFile.iloc[currNum, 1]
     # Deals with empty rows pulling the time back in
@@ -276,27 +275,96 @@ def cleanEditedData(df):
     return df
 
 # Organizes the data in the format needed for TTPS
-def dataTTPS(dataFile: pd.DataFrame):
-    return dataFile
+def dataTTPS(dataFile: pd.DataFrame, startDate: str, endDate: str, location: str, rotation: str):
+    # List of all TTPS enterable data
+    loTTPS = []
+    result = pd.DataFrame([])
+    lastRow = dataFile.dropna(how='all').index.max() + 1
+    
+    # Pulls from the processed data and orgainzes the loTTPS list
+    for i in range(lastRow):
+        testCell = dataFile.iloc[i, 0]
+        if (str(dataFile.iloc[i, 3]) == "* Cannot Input into TTP *"):
+            continue
+        if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
+            preceptorName = str(testCell)
+            recievingFunction = str(dataFile.iloc[i, 1])
+            oneLearner = [startDate, location, "1", rotation + " | " + "Student: ", recievingFunction, endDate, 0, preceptorName, []]
+            twoPlusLearners = [startDate, location, "2+", rotation + " | " + " Student: ", recievingFunction, endDate, 0, preceptorName, []]
+            index = i + offset
+            while index < lastRow:
+                if (str(dataFile.iloc[index, 0]) == ""):
+                    break
+                if (str(dataFile.iloc[index, 2]) in ["Teaching Session", "End of Rotation"]):
+                    index += 1
+                    continue
+                if (dataFile.iloc[index, 3] == 1):
+                    oneLearner[6] += 1
+                    for k in range (s1Col, s4Col):
+                        tempName = str(dataFile.iloc[index, k])
+                        if (not tempName in oneLearner[3]):
+                            oneLearner[8].append(tempName)
+                            oneLearner[3] += " " + str(dataFile.iloc[index, k])
+                if (dataFile.iloc[index, 3] > 1):
+                    twoPlusLearners[6] += 1
+                    for k in range (s1Col, s4Col):
+                        tempName = str(dataFile.iloc[index, k])
+                        if (not tempName in twoPlusLearners[3]):
+                            twoPlusLearners[8].append(tempName)
+                            twoPlusLearners[3] += " " + str(dataFile.iloc[index, k])
+                index += 1
+            if (oneLearner[6] > 0):
+                loTTPS.append(oneLearner)
+            if (twoPlusLearners[6] > 0):
+                loTTPS.append(twoPlusLearners)
+            # Displays the relevant info onto the screen when the TTPS Button is pressed
+            columns = ["Start Date", "Location", "# Learners", "Comments", "Receiving Function", "End Date", "# Sessions", "Preceptor"]
+            # Processing loTTPS
+            for row in loTTPS:
+                if (len(row) == 9):
+                    row.pop() 
+
+            result = pd.DataFrame(loTTPS, columns=columns)
+    return result
     
 # Organizes the data in the format needed for the Internal Tracker
-def dataTracker(dataFile: pd.DataFrame):
-    return dataFile
+def dataTracker(dataFile: pd.DataFrame, academicYear: str, rotation: str, location: str):
+    # List of tracks where each entry is a row in the internal tracker
+    loTracks = []
+    result = pd.DataFrame([])
+    lastRow = dataFile.dropna(how='all').index.max() + 1
+    
+    # Pulls from the processed data and orgainzes the loTracks list
+    for i in range(lastRow):
+        testCell = dataFile.iloc[i, 0]
+        if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
+            preceptorName = str(testCell)
+            paymentType = str(dataFile.iloc[i, 2])
+            index = i + offset
+            while index < lastRow:
+                singleTrack = [academicYear, rotation, location, "", "", preceptorName, "", paymentType, ""]
+                if (str(dataFile.iloc[index, 0]) == ""):
+                    break
+                singleTrack[3] = dataFile.iloc[index, 0]
+                singleTrack[4] = dataFile.iloc[index, 1]
+                singleTrack[6] = dataFile.iloc[index, 3]
+                singleTrack[8] = dataFile.iloc[index, 2]
+                loTracks.append(singleTrack)
+                index += 1
+    
+    # Displays the relevant info onto the screen when the Tracker Button is pressed
+    columns = ["Academic Year", "Rotation", "Location", "Date", "Time Block", "Preceptor", "# Learners", "Payment Type", "Notes"]
+    # Processing loTracks
+    result = pd.DataFrame(loTracks, columns=columns)
+    return result
     
 # Organizes the data in the format needed for One45
 def dataOne45(dataFile: pd.DataFrame):
     # List of preceptors and the there respective students
     preceptorsToStudents = []
-    # List of all students in the current schedule
-    loStudents = []
-    # List of students and there respective preceptors
-    studentsToPreceptors = []
-    s1Col = 4
-    s4Col = 8
-    offset = 2
     lastRow = dataFile.dropna(how='all').index.max() + 1
     
-    # Pulls from the processed data and orgainzes the preceptorsToStudents List
+    # Pulls from the processed data and orgainzes the preceptorsToStudents list
     for i in range(lastRow):
         testCell = dataFile.iloc[i, 0]
         if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
@@ -311,41 +379,11 @@ def dataOne45(dataFile: pd.DataFrame):
                         (tempData[1]).append(tempName)
                 index += 1
             preceptorsToStudents.append(tempData)
-            
-    # Accumulates the loStudents
-    for l in range(len(preceptorsToStudents)):
-        for z in range(len(preceptorsToStudents[l][1])):
-            if (not preceptorsToStudents[l][1][z] in loStudents):
-                loStudents.append(preceptorsToStudents[l][1][z])
-                
-    # Sets ups the studentsToPreceptors list
-    for t in range(len(loStudents)):
-        tempList = [loStudents[t], []]
-        studentsToPreceptors.append(tempList)
-        
-    # Pulls from the processed data and organized the studentsToPreceptors list 
-    for i in range(lastRow):
-        testCell = dataFile.iloc[i, 0]
-        if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
-            # Name of the preceptor
-            currName = str(testCell)
-            index = i + offset
-            while index < lastRow:
-                if (str(dataFile.iloc[index, 0]) == ""):
-                    break
-                for k in range (s1Col, s4Col):
-                    # Name of the student for processing
-                    tempName = str(dataFile.iloc[index, k])
-                    for z in range(len(studentsToPreceptors)):
-                        if (studentsToPreceptors[z][0] == tempName):
-                            studentsToPreceptors[z][1].append(currName)
-                index += 1
     
     # Displays the relevant info onto the screen when the One45 button is pressed
-    columns = ["C1", "C2", "C3", "C4", "C5", "C6"]
+    columns = ["Preceptors", "---->", "Student 1", "Student 2", "Student 3", "Student 4"]
     dataCollection = []
     # Processing Preceptors -> Students
-    dataCollection.append(pd.DataFrame([["Preceptors", "---->", "Students", "======", "======", "======"]], columns=columns))
     for i in range(len(preceptorsToStudents)):
         tempList = []
         tempList.append(preceptorsToStudents[i][0])
@@ -357,6 +395,5 @@ def dataOne45(dataFile: pd.DataFrame):
             for t in range(6 - len(tempList)):
                 tempList.append("")
         dataCollection.append(pd.DataFrame([tempList], columns=columns))
-    barrierRow(dataCollection, columns)
     
     return pd.concat(dataCollection)
