@@ -19,7 +19,7 @@ if st.session_state.screen == "collectData":
     st.title("Rotation Information")
 
     # Load previous values if available
-    filePath = st.text_input("File Path", value=st.session_state.get("filePath", ""), placeholder="C:/path/to/file.xlsx")
+    uploadedFile = st.file_uploader("Upload Excel File", type=["xlsx"])
     rotation = st.text_input("Rotation Name", value=st.session_state.get("rotation", ""), placeholder="A1, etc.")
     location = st.text_input("Location Name", value=st.session_state.get("location", ""), placeholder="VGH, etc.")
     startDate = st.date_input("Start Date", value=st.session_state.get("startDate", datetime.date.today()))
@@ -28,15 +28,15 @@ if st.session_state.screen == "collectData":
 
     # Continue to Editing on button press
     if st.button("Continue", key="continue"):
-        if not filePath or not rotation:
+        if not uploadedFile or not rotation:
             st.warning("Please fill out all required fields.")
         else:
             try:
-                outputFile = extractionFunctions.fileExtractor(filePath.strip('"'))
+                outputFile = extractionFunctions.fileExtractor(uploadedFile)
                 st.session_state.outputFile = outputFile
 
                 # Save form data for future reuse
-                st.session_state.filePath = filePath
+                st.session_state.uploadedFile = uploadedFile
                 st.session_state.rotation = rotation
                 st.session_state.location = location
                 st.session_state.startDate = startDate
@@ -47,7 +47,7 @@ if st.session_state.screen == "collectData":
                 st.rerun()
 
             except Exception as e:
-                st.error("Could not load or process the selected file.")
+                st.error("Could not load or process the uploaded file.")
                 st.exception(e)
 
 
@@ -169,7 +169,7 @@ if st.session_state.screen == "edit":
 # Screen: TTPS output
 if st.session_state.screen == "ttps":
     st.title("TTPS Data")
-    st.subheader("All entries marked as \"* Cannot Input into TTP *\" are not shown")
+    st.text("All entries marked as \"* Cannot Input into TTP *\" are not shown, all other entries are shown")
     
     # Cast problematic column to string before display
     ttpsDisplay = st.session_state.ttpsData.copy()

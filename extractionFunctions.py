@@ -228,9 +228,21 @@ def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
         tempRowList[2] += str(temp[1]) 
 
 # Main function that runs the file extraction program
-def fileExtractor(filePath: str):
+def fileExtractor(uploadedFile):
     try:
-        dataFile = pd.read_excel(filePath, header=None)
+        # Load Excel file and find matching sheet name
+        xls = pd.ExcelFile(uploadedFile)
+        sheetName = None
+        for sheet in xls.sheet_names:
+            if sheet.strip().lower() == "preceptor schedule":
+                sheetName = sheet
+                break
+
+        if not sheetName:
+            raise ValueError("Worksheet named 'Preceptor Schedule' not found.")
+
+        # Load the matched sheet
+        dataFile = pd.read_excel(xls, sheet_name=sheetName, header=None)
 
         dataList = []
         columns = ["Session Date", "Site", "Session Type", "# Students", "S1", "S2", "S3", "S4"]
@@ -242,25 +254,27 @@ def fileExtractor(filePath: str):
             y1 = dataNums[i][0]
             y2 = dataNums[i][1]
             excelSetUp(dataFile, totalDataFrame, y1, y2)
-            # (DATA AGGREGATION FOR STUDENTS AND LESSON TIMES)
-            y1+=2 #REORIENT OUR POINTER
-            for k in range (y1, y2):
+
+            # Data aggregation for student names and times
+            y1 += 2  # reorient pointer
+            for k in range(y1, y2):
                 tempRowList = ["", "", "", "", "", "", "", ""]
                 temp = []
                 handleRows(dataFile, temp, tempRowList, k, totalDataFrame)
-                    
+
             dataAccum(dataList, totalDataFrame, columns)
             emptyRow(dataList, columns)
-            
+
         outputFile = pd.concat(dataList, ignore_index=True)
         return outputFile
+
     except Exception as e:
         print(f"[fileExtractor] Error processing file: {e}")
-        raise 
+        raise
     
 # ==== END DATA FORMATTING FUNCTIONS ==== 
 
-# UNIVERSAL CLEANING FUNCTION
+# Universal cleaning function
 def cleanEditedData(df):
     # Drop row column if exists
     if "Row" in df.columns:
