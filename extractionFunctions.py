@@ -303,8 +303,8 @@ def dataTTPS(dataFile: pd.DataFrame, startDate: str, endDate: str, location: str
         if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
             preceptorName = str(testCell)
             recievingFunction = str(dataFile.iloc[i, 1])
-            oneLearner = [startDate, location, "1", rotation + " | " + "Student: ", recievingFunction, endDate, 0, preceptorName, []]
-            twoPlusLearners = [startDate, location, "2+", rotation + " | " + " Student: ", recievingFunction, endDate, 0, preceptorName, []]
+            oneLearner = [startDate, location, "1", rotation + " | " + "Student(s): ", recievingFunction, endDate, 0, preceptorName, []]
+            twoPlusLearners = [startDate, location, "2+", rotation + " | " + "Student(s): ", recievingFunction, endDate, 0, preceptorName, []]
             index = i + offset
             while index < lastRow:
                 if (str(dataFile.iloc[index, 0]) == ""):
@@ -317,15 +317,23 @@ def dataTTPS(dataFile: pd.DataFrame, startDate: str, endDate: str, location: str
                     for k in range (s1Col, s4Col):
                         tempName = str(dataFile.iloc[index, k])
                         if (not tempName in oneLearner[3]):
-                            oneLearner[8].append(tempName)
-                            oneLearner[3] += " " + str(dataFile.iloc[index, k])
+                            if (len(oneLearner[8]) == 0): 
+                                oneLearner[3] += str(dataFile.iloc[index, k])
+                                oneLearner[8].append(tempName)
+                            else:
+                                oneLearner[3] += " | " + str(dataFile.iloc[index, k])
+                                oneLearner[8].append(tempName)
                 if (dataFile.iloc[index, 3] > 1):
                     twoPlusLearners[6] += 1
                     for k in range (s1Col, s4Col):
                         tempName = str(dataFile.iloc[index, k])
                         if (not tempName in twoPlusLearners[3]):
-                            twoPlusLearners[8].append(tempName)
-                            twoPlusLearners[3] += " " + str(dataFile.iloc[index, k])
+                            if (len(twoPlusLearners[8]) == 0): 
+                                twoPlusLearners[3] += str(dataFile.iloc[index, k])
+                                twoPlusLearners[8].append(tempName)
+                            else:
+                                twoPlusLearners[3] += " | " + str(dataFile.iloc[index, k])
+                                twoPlusLearners[8].append(tempName)
                 index += 1
             if (oneLearner[6] > 0):
                 loTTPS.append(oneLearner)
