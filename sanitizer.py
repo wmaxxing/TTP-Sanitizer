@@ -72,11 +72,11 @@ if st.session_state.screen == "edit":
         max_value=len(outputFile) + 1,
         value=0
     )
-
+    endline = 100 
     numRowsToInsert = st.number_input(
         "Number of rows to insert:",
         min_value=1,
-        max_value=100,
+        max_value=endline,
         value=1
     )
 
@@ -101,15 +101,18 @@ if st.session_state.screen == "edit":
     if "# Students" in outputFile_display.columns:
         outputFile_display["# Students"] = outputFile_display["# Students"].astype(str)
 
+    windowHeight = 800
     editedDataFile = st.data_editor(
         outputFile_display,
         use_container_width=True,
         num_rows="dynamic",
-        height=800,
+        height=windowHeight,
         hide_index=False
     )
 
-    col1, col2, col3, col4, _ = st.columns([0.13, 0.18, 0.15, 0.15, 1.75])
+    colSpacers = [0.13, 0.18, 0.15, 0.15, 1.75]
+    
+    col1, col2, col3, col4, _ = st.columns(colSpacers)
 
     with col1:
         # Move to TTPS screen on button press

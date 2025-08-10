@@ -10,6 +10,10 @@ start = 0
 s1Col = 4
 s4Col = 8
 offset = 2
+firstCol = 0
+secondCol = 1
+thirdCol = 2
+fourthCol = 3
 
 paymentLUT = ["FFS", "GFT", "PS", "CSC", "SESSIONAL", "CHES FELLOW", "AIP", "CF", "PS", "SHA", "START TIME", "TSF"]
 
@@ -25,15 +29,15 @@ def saveCleanExcel(df: pd.DataFrame, filename: str):
 
     for colCells in ws.columns:
         maxLen = 0
-        colLetter = colCells[0].column_letter
+        colLetter = colCells[firstCol].column_letter
 
         for cell in colCells:
             if isinstance(cell.value, datetime):
                 cell.number_format = numbers.FORMAT_DATE_YYYYMMDD2
             if cell.value is not None:
                 maxLen = max(maxLen, len(str(cell.value)))
-
-        ws.column_dimensions[colLetter].width = maxLen + 3
+        additionalwidth = 3
+        ws.column_dimensions[colLetter].width = maxLen + additionalwidth
 
     wb.save(filename)
     print(f"Saved to: {filename}")
@@ -49,15 +53,15 @@ def findBlocks(dataFile: pd.DataFrame):
         testForDate = str(dataFile.iloc[i, start])
         # If the keyword date is found begins the box searching process
         if (testForDate.strip().upper() == "DATE"):
-            testForStudent = dataFile.iloc[i+1, 2]
-            testForStat = str(dataFile.iloc[i+1, 1])
+            testForStudent = dataFile.iloc[i+1, thirdCol]
+            testForStat = str(dataFile.iloc[i+1, secondCol])
             # If the keyword date is found but the box is content empty skips the data box
             if ((not testForStat == "STAT") and (not isinstance(testForStudent, str))):
                 continue
             # Once the box has been indentified as good finds the end of the data box
             for k in range(i + 1, lastRow):
-                testForEnd1 = dataFile.iloc[k, start]
-                testForEnd2 = str(dataFile.iloc[k, start + 1])
+                testForEnd1 = dataFile.iloc[k, firstCol]
+                testForEnd2 = str(dataFile.iloc[k, firstCol + 1])
                 # Records the start and end of the data box into a list where it can be used upon return
                 if (isinstance(testForEnd1, str)):
                     tempData = [i-1, k] 
@@ -72,11 +76,12 @@ def findBlocks(dataFile: pd.DataFrame):
 # Used to handle all the pulling of data from the time columns of the original document
 def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, totalDataFrame: list):
             # Sets up the temp row of data from the spread sheet
-        for l in range(3):
+        rowNumbers = 3
+        for l in range(rowNumbers):
             temp.append(dataFile.iloc[k,l])
             
-        if (isinstance(temp[0], datetime)):
-            tempRowList[0] = pd.to_datetime(dataFile.iloc[k, 0]).strftime('%Y-%m-%d')
+        if (isinstance(temp[firstCol], datetime)):
+            tempRowList[0] = pd.to_datetime(dataFile.iloc[k, firstCol]).strftime('%Y-%m-%d')
             # Handles the time      
             timeHander(dataFile, temp, tempRowList, k)  
             # Handles the students
@@ -84,13 +89,13 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
             # Duplicates rows depending on morning and afternoon coverage
             rowDupe(totalDataFrame, tempRowList)
         
-        elif ((pd.isna(temp[0])) and (str(temp[1])[0] in tuple("0123456789"))):
+        elif ((pd.isna(temp[firstCol])) and (str(temp[secondCol])[firstCol] in tuple("0123456789"))):
             # Pulls in the previous date from the nearest above line
             curr = k - 1
-            currCell = dataFile.iloc[curr, 0]
+            currCell = dataFile.iloc[curr, firstCol]
             while (pd.isna(currCell)):
                 curr-=1
-                currCell = dataFile.iloc[curr, 0]
+                currCell = dataFile.iloc[curr, firstCol]
             tempRowList[0] = pd.to_datetime(currCell).strftime('%Y-%m-%d')
             
             timeHander(dataFile, temp, tempRowList, k)
@@ -101,40 +106,40 @@ def handleRows (dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int, t
 def studentHander(dataFile: pd.DataFrame, k: int, tempRowList: list):
     studentList = []
     # Case where first tile is full and names follow below
-    if (not pd.isna(dataFile.iloc[k, 2])):
-        studentList.append(str(dataFile.iloc[k, 2]))
+    if (not pd.isna(dataFile.iloc[k, thirdCol])):
+        studentList.append(str(dataFile.iloc[k, thirdCol]))
         curr = k + 1
-        currCell = dataFile.iloc[curr, 0]
+        currCell = dataFile.iloc[curr, firstCol]
         while (pd.isna(currCell)):
-            if (not pd.isna(dataFile.iloc[curr, 1]) and (str(dataFile.iloc[curr, 1])[0] in tuple("0123456789"))):
+            if (not pd.isna(dataFile.iloc[curr, secondCol]) and (str(dataFile.iloc[curr, secondCol])[firstCol] in tuple("0123456789"))):
                 break
-            if (not pd.isna(dataFile.iloc[curr, 2])):
-                studentList.append(str(dataFile.iloc[curr, 2]))
+            if (not pd.isna(dataFile.iloc[curr, thirdCol])):
+                studentList.append(str(dataFile.iloc[curr, thirdCol]))
             curr+=1
-            currCell = dataFile.iloc[curr, 0]
+            currCell = dataFile.iloc[curr, firstCol]
     # Case where first tile is empty and must backtrack up for entries
-    elif (pd.isna(dataFile.iloc[k, 2])): 
+    elif (pd.isna(dataFile.iloc[k, thirdCol])): 
         curr = k - 1
-        currCell = dataFile.iloc[curr, 0]
+        currCell = dataFile.iloc[curr, firstCol]
         while (pd.isna(currCell)):
             curr-=1
-            currCell = dataFile.iloc[curr, 0]
-            if (not pd.isna(dataFile.iloc[curr, 2])):
-                studentList.append(str(dataFile.iloc[curr, 2]))
+            currCell = dataFile.iloc[curr, firstCol]
+            if (not pd.isna(dataFile.iloc[curr, thirdCol])):
+                studentList.append(str(dataFile.iloc[curr, thirdCol]))
         curr = k - 1
-        studentList.append(str(dataFile.iloc[curr, 2]))
+        studentList.append(str(dataFile.iloc[curr, thirdCol]))
     
-
+    entryCol = 4
     for i in range(0, len(studentList)):
-       tempRowList[4 + i] = studentList[i]
-    tempRowList[3] = len(studentList)
+       tempRowList[entryCol + i] = studentList[i]
+    tempRowList[entryCol - 1] = len(studentList)
                     
 # Used to duplicate rows when a "BOTH" type session is encountered
 def rowDupe(totalDataFrame: list, tempRowList: list):
 
     # Duplicates rows depending on morning and afternoon coverage
-    if (tempRowList[1] == "Both"):
-        tempRowList[1] = "Morning"
+    if (tempRowList[secondCol] == "Both"):
+        tempRowList[secondCol] = "Morning"
         totalDataFrame.append(tempRowList)
         dupRowList = [tempRowList[0], "Afternoon", tempRowList[2], tempRowList[3], tempRowList[4], tempRowList[5] , tempRowList[6], tempRowList[7]]
         totalDataFrame.append(dupRowList)
@@ -144,11 +149,11 @@ def rowDupe(totalDataFrame: list, tempRowList: list):
 # Used to set up the document and orient basic requried info
 def excelSetUp(dataFile: pd.DataFrame, totalDataFrame: list, y1: int, y2: int):
     # (DOCTOR NAME, SPECIALTY, TTP TYPE, SPECIAL INFO)
-    if (str(dataFile.iloc[y1, 0]) == "PRECEPTOR TO BE DECIDED"):
-        topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], "*TBD*", dataFile.iloc[y2,2], "", "", "", ""]
+    if (str(dataFile.iloc[y1, firstCol]) == "PRECEPTOR TO BE DECIDED"):
+        topRowList = [dataFile.iloc[y1,firstCol], dataFile.iloc[y1,fourthCol], "*TBD*", dataFile.iloc[y2,thirdCol], "", "", "", ""]
         totalDataFrame.append(topRowList)
     else:
-        topRowList = [dataFile.iloc[y1,0], dataFile.iloc[y1,3], dataFile.iloc[y2,1], dataFile.iloc[y2,2], "", "", "", ""]
+        topRowList = [dataFile.iloc[y1,firstCol], dataFile.iloc[y1,fourthCol], dataFile.iloc[y2,secondCol], dataFile.iloc[y2,thirdCol], "", "", "", ""]
         totalDataFrame.append(topRowList)
     # (DATE, TIME, STUDENT NAMES, NUMBER OF STUDENTS)
     secondRowList = ["DATE", "TIME", "EXTRA INFO", "# OF STUDENTS", "S1", "S2", "S3", "S4"]
@@ -170,8 +175,9 @@ def dataAccum(dataList: pd.DataFrame, totalDataFrame: list, columns:list):
 # Used to clevely determine if a session is morning afternoon or both depending on its time
 def timeOfSession(timeOfSession: str):
     timeCutOff = 420
+    morningCutOff = 1200
     lon = timeExtractor(timeOfSession)
-    if ((lon[0] < 1200) and (lon[1] - lon[0] <= timeCutOff)):
+    if ((lon[0] < morningCutOff) and (lon[1] - lon[0] <= timeCutOff)):
         return "Morning"
     elif (lon[1] - lon[0] > timeCutOff):
         return "Both" 
@@ -203,29 +209,29 @@ def timeExtractor(timeOfSession: str):
 # Used to extract times and pick day time for sessions
 def timeHander(dataFile: pd.DataFrame, temp: list, tempRowList: list, k: int):
     # Pulls the first time out of the sheet
-    if (str(temp[1]).startswith(tuple("0123456789"))):
-        tempRowList[1] = timeOfSession(temp[1])
+    if (str(temp[secondCol]).startswith(tuple("0123456789"))):
+        tempRowList[1] = timeOfSession(temp[secondCol])
         # Handles below row comments
         currNum = k + 1
-        curr = dataFile.iloc[currNum,1]
+        curr = dataFile.iloc[currNum,secondCol]
         while ((not str(curr) in paymentLUT) and (not str(curr).startswith(tuple("0123456789")))):
             if ((not str(curr).startswith(tuple("0123456789"))) and (not pd.isna(curr))):
-                tempRowList[2] += str(curr)
+                tempRowList[thirdCol] += str(curr)
             currNum += 1
-            curr = dataFile.iloc[currNum, 1]
+            curr = dataFile.iloc[currNum, secondCol]
     # Deals with empty rows pulling the time back in
-    elif (pd.isna(temp[1])):
+    elif (pd.isna(temp[secondCol])):
         curr = k - 1
-        currCell = dataFile.iloc[curr, 1]
+        currCell = dataFile.iloc[curr, secondCol]
         while (pd.isna(currCell)):
             curr-=1
-            currCell = dataFile.iloc[curr, 1]
-        tempRowList[1] = timeOfSession(str(currCell))
+            currCell = dataFile.iloc[curr, secondCol]
+        tempRowList[secondCol] = timeOfSession(str(currCell))
     # Deals with special case inputs in the time column
     else:
-        if (str(temp[1] == "STAT")):
+        if (str(temp[secondCol] == "STAT")):
             return
-        tempRowList[2] += str(temp[1]) 
+        tempRowList[thirdCol] += str(temp[secondCol]) 
 
 # Main function that runs the file extraction program
 def fileExtractor(uploadedFile):
@@ -251,8 +257,8 @@ def fileExtractor(uploadedFile):
 
         for i in range(len(dataNums)):
             totalDataFrame = [] 
-            y1 = dataNums[i][0]
-            y2 = dataNums[i][1]
+            y1 = dataNums[i][firstCol]
+            y2 = dataNums[i][secondCol]
             excelSetUp(dataFile, totalDataFrame, y1, y2)
 
             # Data aggregation for student names and times
@@ -297,8 +303,8 @@ def dataTTPS(dataFile: pd.DataFrame, startDate: str, endDate: str, location: str
     
     # Pulls from the processed data and orgainzes the loTTPS list
     for i in range(lastRow):
-        testCell = dataFile.iloc[i, 0]
-        if (str(dataFile.iloc[i, 3]) == "* Cannot Input into TTP *"):
+        testCell = dataFile.iloc[i, firstCol]
+        if (str(dataFile.iloc[i, fourthCol]) == "* Cannot Input into TTP *"):
             continue
         if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
             preceptorName = str(testCell)
@@ -307,43 +313,48 @@ def dataTTPS(dataFile: pd.DataFrame, startDate: str, endDate: str, location: str
             twoPlusLearners = [startDate, location, "2+", rotation + " | " + "Student(s): ", recievingFunction, endDate, 0, preceptorName, []]
             index = i + offset
             while index < lastRow:
-                if (str(dataFile.iloc[index, 0]) == ""):
+                if (str(dataFile.iloc[index, firstCol]) == ""):
                     break
-                if (str(dataFile.iloc[index, 2]) in ["Teaching Session", "End of Rotation"]):
+                if (str(dataFile.iloc[index, thirdCol]) in ["Teaching Session", "End of Rotation"]):
                     index += 1
                     continue
-                if (dataFile.iloc[index, 3] == 1):
-                    oneLearner[6] += 1
+                indexOfNumberOfStudents = 6
+                indexOfStudentNameList = 8
+                indexOfTrackComment = 3
+                numberOfStudentCutOff = 1
+                if (dataFile.iloc[index, fourthCol] == numberOfStudentCutOff):
+                    oneLearner[indexOfNumberOfStudents] += 1
                     for k in range (s1Col, s4Col):
                         tempName = str(dataFile.iloc[index, k])
-                        if (not tempName in oneLearner[3]):
-                            if (len(oneLearner[8]) == 0): 
-                                oneLearner[3] += str(dataFile.iloc[index, k])
-                                oneLearner[8].append(tempName)
+                        if (not tempName in oneLearner[indexOfTrackComment]):
+                            if (len(oneLearner[indexOfStudentNameList]) == 0): 
+                                oneLearner[indexOfTrackComment] += str(dataFile.iloc[index, k])
+                                oneLearner[indexOfStudentNameList].append(tempName)
                             else:
-                                oneLearner[3] += " | " + str(dataFile.iloc[index, k])
-                                oneLearner[8].append(tempName)
-                if (dataFile.iloc[index, 3] > 1):
-                    twoPlusLearners[6] += 1
+                                oneLearner[indexOfTrackComment] += " | " + str(dataFile.iloc[index, k])
+                                oneLearner[indexOfStudentNameList].append(tempName)
+                if (dataFile.iloc[index, indexOfTrackComment] > numberOfStudentCutOff):
+                    twoPlusLearners[indexOfNumberOfStudents] += 1
                     for k in range (s1Col, s4Col):
                         tempName = str(dataFile.iloc[index, k])
-                        if (not tempName in twoPlusLearners[3]):
-                            if (len(twoPlusLearners[8]) == 0): 
-                                twoPlusLearners[3] += str(dataFile.iloc[index, k])
-                                twoPlusLearners[8].append(tempName)
+                        if (not tempName in twoPlusLearners[indexOfTrackComment]):
+                            if (len(twoPlusLearners[indexOfStudentNameList]) == 0): 
+                                twoPlusLearners[indexOfTrackComment] += str(dataFile.iloc[index, k])
+                                twoPlusLearners[indexOfStudentNameList].append(tempName)
                             else:
-                                twoPlusLearners[3] += " | " + str(dataFile.iloc[index, k])
-                                twoPlusLearners[8].append(tempName)
+                                twoPlusLearners[indexOfTrackComment] += " | " + str(dataFile.iloc[index, k])
+                                twoPlusLearners[indexOfStudentNameList].append(tempName)
                 index += 1
-            if (oneLearner[6] > 0):
+            if (oneLearner[indexOfNumberOfStudents] > 0):
                 loTTPS.append(oneLearner)
-            if (twoPlusLearners[6] > 0):
+            if (twoPlusLearners[indexOfNumberOfStudents] > 0):
                 loTTPS.append(twoPlusLearners)
             # Displays the relevant info onto the screen when the TTPS Button is pressed
             columns = ["Start Date", "Location", "# Learners", "Comments", "Receiving Function", "End Date", "# Sessions", "Preceptor"]
             # Processing loTTPS
+            maxRowLen = 9
             for row in loTTPS:
-                if (len(row) == 9):
+                if (len(row) == maxRowLen):
                     row.pop() 
 
             result = pd.DataFrame(loTTPS, columns=columns)
@@ -351,6 +362,10 @@ def dataTTPS(dataFile: pd.DataFrame, startDate: str, endDate: str, location: str
     
 # Organizes the data in the format needed for the Internal Tracker
 def dataTracker(dataFile: pd.DataFrame, academicYear: str, rotation: str, location: str):
+    indexOfDate = 3
+    indexOfTimeBlock = 4
+    indexOfNumberOfLearners = 6
+    indexOfNotes = 8
     # List of tracks where each entry is a row in the internal tracker
     loTracks = []
     result = pd.DataFrame([])
@@ -358,19 +373,19 @@ def dataTracker(dataFile: pd.DataFrame, academicYear: str, rotation: str, locati
     
     # Pulls from the processed data and orgainzes the loTracks list
     for i in range(lastRow):
-        testCell = dataFile.iloc[i, 0]
+        testCell = dataFile.iloc[i, firstCol]
         if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
             preceptorName = str(testCell)
-            paymentType = str(dataFile.iloc[i, 2])
+            paymentType = str(dataFile.iloc[i, thirdCol])
             index = i + offset
             while index < lastRow:
                 singleTrack = [academicYear, rotation, location, "", "", preceptorName, "", paymentType, ""]
-                if (str(dataFile.iloc[index, 0]) == ""):
+                if (str(dataFile.iloc[index, firstCol]) == ""):
                     break
-                singleTrack[3] = dataFile.iloc[index, 0]
-                singleTrack[4] = dataFile.iloc[index, 1]
-                singleTrack[6] = dataFile.iloc[index, 3]
-                singleTrack[8] = dataFile.iloc[index, 2]
+                singleTrack[indexOfDate] = dataFile.iloc[index, firstCol]
+                singleTrack[indexOfTimeBlock] = dataFile.iloc[index, secondCol]
+                singleTrack[indexOfNumberOfLearners] = dataFile.iloc[index, fourthCol]
+                singleTrack[indexOfNotes] = dataFile.iloc[index, thirdCol]
                 loTracks.append(singleTrack)
                 index += 1
     
@@ -388,17 +403,17 @@ def dataOne45(dataFile: pd.DataFrame):
     
     # Pulls from the processed data and orgainzes the preceptorsToStudents list
     for i in range(lastRow):
-        testCell = dataFile.iloc[i, 0]
+        testCell = dataFile.iloc[i, firstCol]
         if ((not testCell == "DATE") and (str(testCell).startswith(tuple(string.ascii_letters)))):
             tempData = [str(testCell), []]
             index = i + offset
             while index < lastRow:
-                if (str(dataFile.iloc[index, 0]) == ""):
+                if (str(dataFile.iloc[index, firstCol]) == ""):
                     break
                 for k in range (s1Col, s4Col):
                     tempName = str(dataFile.iloc[index, k])
-                    if (not tempName in tempData[1] and not tempName == ""):
-                        (tempData[1]).append(tempName)
+                    if (not tempName in tempData[secondCol] and not tempName == ""):
+                        (tempData[secondCol]).append(tempName)
                 index += 1
             preceptorsToStudents.append(tempData)
     
@@ -413,8 +428,9 @@ def dataOne45(dataFile: pd.DataFrame):
         preceptorsToStudents[i][1] = sorted(preceptorsToStudents[i][1])
         for k in range(len(preceptorsToStudents[i][1])):
             tempList.append(preceptorsToStudents[i][1][k])
-        if (len(tempList) < 6):
-            for t in range(6 - len(tempList)):
+        endRowIndex = 6
+        if (len(tempList) < endRowIndex):
+            for t in range(endRowIndex - len(tempList)):
                 tempList.append("")
         dataCollection.append(pd.DataFrame([tempList], columns=columns))
     
